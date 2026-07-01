@@ -6,7 +6,7 @@ version      = "0.1.0"
 
 [[bin]]
 name = "cloudy-with-a-chance-of-rust"
-path = "./src/bin/main.rs"
+path = "./src/main.rs"
 
 [dependencies]
 esp-hal = { version = "~1.1.0", features = ["esp32c6", "unstable"] }
@@ -54,6 +54,11 @@ smoltcp = { version = "0.13.0", default-features = false, features = [
 
 critical-section = "1.2.0"
 static_cell      = "2.1.1"
+
+epd-waveshare = "0.6.0"
+embedded-hal-bus = "0.3.0"
+embedded-graphics = "0.8.2"
+embedded-graphics-transform = "0.1.0"
 
 
 # For fine tuning these settings, please refer to https://doc.rust-lang.org/cargo/reference/profiles.html
