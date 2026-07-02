@@ -8,6 +8,7 @@
 #![deny(clippy::large_stack_frames)]
 
 mod wifi;
+mod display;
 
 use embassy_net::{DhcpConfig, StackResources, Stack, Runner};
 use embassy_executor::Spawner;
@@ -44,6 +45,7 @@ use embedded_graphics::prelude::*;
 use embedded_graphics::text::{Alignment, Baseline, Text};
 use embedded_graphics_transform::Transpose;
 use epd_waveshare::graphics::DisplayRotation;
+use crate::display::setup_display;
 
 #[panic_handler]
 fn panic(panic_info: &core::panic::PanicInfo) -> ! {
@@ -134,6 +136,8 @@ async fn main(spawner: Spawner) -> ! {
     let cs = Output::new(peripherals.GPIO10, Level::Low, OutputConfig::default());
     let mut spi_dev = ExclusiveDevice::new(spi_bus, cs, Delay).unwrap();
 
+    let display = setup_display(peripherals);
+
     // Initialize Display
     let busy_in = Input::new(
         peripherals.GPIO22,
@@ -155,9 +159,6 @@ async fn main(spawner: Spawner) -> ! {
     draw_text(&mut display, "hello", 0, 55);
     epd.update_and_display_frame(&mut spi_dev, display.buffer(), &mut Delay)
         .unwrap();
-    Timer::after(Duration::from_secs(5)).await;
-
-    epd.sleep(&mut spi_dev, &mut Delay).unwrap();
 
     stack.wait_config_up().await;
     if let Some(config) = stack.config_v4() {

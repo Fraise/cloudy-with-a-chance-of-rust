@@ -120,6 +120,7 @@ dependencies = [
  "embassy-time",
  "embedded-graphics",
  "embedded-graphics-transform",
+ "embedded-hal 1.0.0",
  "embedded-hal-bus",
  "embedded-io 0.7.1",
  "embedded-io-async 0.7.0",

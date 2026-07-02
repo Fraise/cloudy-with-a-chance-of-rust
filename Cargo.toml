@@ -56,6 +56,7 @@ critical-section = "1.2.0"
 static_cell      = "2.1.1"
 
 epd-waveshare = "0.6.0"
+embedded-hal = "1.0.0"
 embedded-hal-bus = "0.3.0"
 embedded-graphics = "0.8.2"
 embedded-graphics-transform = "0.1.0"
