@@ -9,16 +9,16 @@
 
 mod wifi;
 mod display;
+mod icons;
 
-use embassy_net::{DhcpConfig, StackResources, Stack, Runner};
+use embassy_net::{Stack, Runner};
 use embassy_executor::Spawner;
-use embassy_time::{Duration, Timer, Delay};
+use embassy_time::{Duration, Timer};
 use esp_hal::clock::CpuClock;
 use esp_hal::timer::timg::TimerGroup;
 use rtt_target::rprintln;
 use esp_radio::wifi::{
     Config,
-    ControllerConfig,
     Interface,
     WifiController,
     scan::ScanConfig,
@@ -26,8 +26,6 @@ use esp_radio::wifi::{
 };
 
 // epd
-use epd_waveshare::color::Color;
-use epd_waveshare::epd2in13_v2::{Epd2in13, Display2in13};
 use epd_waveshare::prelude::WaveshareDisplay;
 
 // SPI
@@ -36,15 +34,8 @@ use esp_hal::spi::master::Spi;
 use esp_hal::time::Rate;
 
 use esp_hal::gpio::{Input, InputConfig, Level, Output, OutputConfig, Pull};
-use embedded_hal_bus::spi::ExclusiveDevice;
 
 // embedded graphics
-use embedded_graphics::mono_font::MonoTextStyleBuilder;
-use embedded_graphics::mono_font::ascii::FONT_10X20;
-use embedded_graphics::prelude::*;
-use embedded_graphics::text::{Alignment, Baseline, Text};
-use embedded_graphics_transform::Transpose;
-use epd_waveshare::graphics::DisplayRotation;
 use crate::display::setup_display;
 
 #[panic_handler]
@@ -144,6 +135,7 @@ async fn main(spawner: Spawner) -> ! {
     // Initialize Display
     let mut display = setup_display(spi_bus, cs, busy_in, dc, reset);
     display.draw_text("hello potato", 0, 55);
+    display.draw_icon("nights_stay.bmp", 120, 55);
     display.flush().unwrap();
 
     stack.wait_config_up().await;

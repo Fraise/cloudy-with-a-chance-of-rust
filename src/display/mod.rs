@@ -1,8 +1,11 @@
+use alloc::vec::Vec;
 use embedded_graphics::mono_font::ascii::FONT_10X20;
 use embedded_graphics::mono_font::MonoTextStyleBuilder;
 use embedded_graphics::prelude::*;
 use embedded_graphics::text::{Alignment, Text};
 use embassy_time::Delay;
+use embedded_graphics::image::Image;
+use embedded_graphics::pixelcolor::Rgb555;
 use embedded_hal::digital::{InputPin, OutputPin};
 use embedded_hal::spi::{ErrorType, SpiBus};
 use embedded_hal_bus::spi::ExclusiveDevice;
@@ -15,6 +18,7 @@ use esp_hal::peripherals::Peripherals;
 use esp_hal::{spi, Blocking};
 use esp_hal::spi::master::Spi;
 use esp_hal::time::Rate;
+use tinybmp::{Bmp};
 
 /// Concrete alias for the SPI error type our `ExclusiveDevice` produces.
 /// Lets the public method signatures stay short.
@@ -100,6 +104,23 @@ where
             .build();
 
         Text::with_alignment(text, Point::new(x, y), text_style, Alignment::Left).draw(&mut self.framebuffer).unwrap();
+    }
+
+    pub fn draw_icon(&mut self, icon_name: &str, x: i32, y: i32) {
+        let img_bytes = crate::icons::ICONS
+            .iter()
+            .find(|(name, _)| *name == icon_name)
+            .map(|(_, img_bytes)| *img_bytes)
+            .expect("unknown icon");
+
+        let bmp :Bmp<Rgb555> = Bmp::from_slice(img_bytes).unwrap();
+
+        for pixel in bmp.pixels() {
+            let (rel, rgb) = (pixel.0, pixel.1);
+            let luma = (rgb.r() as u32 + rgb.g() as u32 + rgb.b() as u32) / 3;
+            let color = if luma > 0x10 { Color::White } else { Color::Black };
+            let _ = Pixel(Point::new(x, y) + rel, color).draw(&mut self.framebuffer);
+        }
     }
 }
 

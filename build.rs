@@ -1,4 +1,9 @@
+use std::fs;
+use std::path::Path;
+
 fn main() {
+    generate_icon_array();
+
     linker_be_nice();
     // make sure linkall.x is the last linker script (otherwise might cause problems with flip-link)
     println!("cargo:rustc-link-arg=-Tlinkall.x");
@@ -67,4 +72,31 @@ fn linker_be_nice() {
         "cargo:rustc-link-arg=--error-handling-script={}",
         std::env::current_exe().unwrap().display()
     );
+}
+
+fn generate_icon_array() {
+    let dest_path = Path::new("src/icons/mod.rs");
+    let icon_dir = Path::new("icons/");
+
+    let mut generated_code = String::new();
+
+    generated_code.push_str("pub static ICONS: &[(&str, &[u8])] = &[\n");
+
+    if let Ok(entries) = fs::read_dir(icon_dir) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if let Some(file_name) = path.file_name().and_then(|f| f.to_str()) {
+                generated_code.push_str(&format!(
+                    "    (\"{}\", include_bytes!(\"{}/{}\")),\n",
+                    file_name, "../../icons", file_name
+                ));
+            }
+        }
+    }
+
+    generated_code.push_str("];\n");
+
+    fs::write(dest_path, generated_code).expect("Failed to write icons.rs");
+
+    println!("cargo:rerun-if-changed={}", icon_dir.to_str().unwrap());
 }
