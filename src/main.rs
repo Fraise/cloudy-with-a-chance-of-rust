@@ -120,6 +120,7 @@ async fn main(spawner: Spawner) -> ! {
     spawner.spawn(net_task(runner).unwrap());
 
 
+    // Setup display dependencies
     let spi_bus = Spi::new(
         peripherals.SPI2,
         spi::master::Config::default()
@@ -132,33 +133,18 @@ async fn main(spawner: Spawner) -> ! {
         //DIN
         .with_mosi(peripherals.GPIO23);
 
-
     let cs = Output::new(peripherals.GPIO10, Level::Low, OutputConfig::default());
-    let mut spi_dev = ExclusiveDevice::new(spi_bus, cs, Delay).unwrap();
-
-    let display = setup_display(peripherals);
-
-    // Initialize Display
     let busy_in = Input::new(
         peripherals.GPIO22,
         InputConfig::default().with_pull(Pull::None),
     );
     let dc = Output::new(peripherals.GPIO17, Level::Low, OutputConfig::default());
     let reset = Output::new(peripherals.GPIO16, Level::Low, OutputConfig::default());
-    let mut display = Display2in13::default();
-    display.set_rotation(DisplayRotation::Rotate90);
-    let mut epd = Epd2in13::new(&mut spi_dev, busy_in, dc, reset, &mut Delay, None).unwrap();
 
-    // Clear any existing image
-    epd.clear_frame(&mut spi_dev, &mut Delay).unwrap();
-    display.clear(Color::White).unwrap();
-    epd.update_and_display_frame(&mut spi_dev, display.buffer(), &mut Delay)
-        .unwrap();
-    Timer::after(Duration::from_secs(5)).await;
-
-    draw_text(&mut display, "hello", 0, 55);
-    epd.update_and_display_frame(&mut spi_dev, display.buffer(), &mut Delay)
-        .unwrap();
+    // Initialize Display
+    let mut display = setup_display(spi_bus, cs, busy_in, dc, reset);
+    display.draw_text("hello potato", 0, 55);
+    display.flush().unwrap();
 
     stack.wait_config_up().await;
     if let Some(config) = stack.config_v4() {
@@ -220,13 +206,4 @@ async fn connection(mut controller: WifiController<'static>) {
 #[embassy_executor::task]
 async fn net_task(mut runner: Runner<'static, Interface<'static>>) {
     runner.run().await
-}
-
-fn draw_text(display: &mut Display2in13, text: &str, x: i32, y: i32) {
-    let text_style = MonoTextStyleBuilder::new()
-        .font(&FONT_10X20)
-        .text_color(Color::Black)
-        .build();
-
-    Text::with_alignment(text, Point::new(x, y), text_style, Alignment::Left).draw(display).unwrap();
 }
