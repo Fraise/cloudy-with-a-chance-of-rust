@@ -135,7 +135,7 @@ async fn main(spawner: Spawner) -> ! {
     // Initialize Display
     let mut display = setup_display(spi_bus, cs, busy_in, dc, reset);
     display.draw_text("hello potato", 0, 55);
-    display.draw_icon("nights_stay.bmp", 120, 55);
+    display.draw_icon("nights_stay.bmp", 0, 0);
     display.flush().unwrap();
 
     stack.wait_config_up().await;

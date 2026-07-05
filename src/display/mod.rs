@@ -114,12 +114,14 @@ where
             .expect("unknown icon");
 
         let bmp :Bmp<Rgb555> = Bmp::from_slice(img_bytes).unwrap();
+        let height = bmp.size().height as i32;
 
         for pixel in bmp.pixels() {
-            let (rel, rgb) = (pixel.0, pixel.1);
+            let (point, rgb) = (pixel.0, pixel.1);
             let luma = (rgb.r() as u32 + rgb.g() as u32 + rgb.b() as u32) / 3;
             let color = if luma > 0x10 { Color::White } else { Color::Black };
-            let _ = Pixel(Point::new(x, y) + rel, color).draw(&mut self.framebuffer);
+            let mirrored = Point::new(point.x, height - 1 - point.y);
+            let _ = Pixel(Point::new(x, y) + mirrored, color).draw(&mut self.framebuffer);
         }
     }
 }
