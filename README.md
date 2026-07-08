@@ -24,3 +24,7 @@ Reference: https://esp32.implrust.com/e-ink/circuit.html
 - [Waveshare ESP32-C6 dev kit doc](https://docs.waveshare.com/ESP32-C6-DEV-KIT-N8)
 - [Waveshare e-Paper doc](https://www.waveshare.com/wiki/2.13inch_e-Paper_HAT_(B)_Manual)
 - [Wifi connection example](https://github.com/esp-rs/esp-hal/blob/esp-hal-v1.1.0/examples/wifi/embassy_dhcp/src/main.rs)
+
+## Weather API
+
+https://www.weatherapi.com/docs/

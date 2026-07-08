@@ -10,8 +10,11 @@
 mod wifi;
 mod display;
 mod icons;
+mod weatherapi;
 
-use embassy_net::{Stack, Runner};
+use alloc::string::String;
+// use embassy_net::{Stack, Runner, dns::DnsSocket, tcp::client::{TcpClient, TcpClientState}};
+use embassy_net::{Stack, Runner, tcp::client::{TcpClient, TcpClientState}};
 use embassy_executor::Spawner;
 use embassy_time::{Duration, Timer};
 use esp_hal::clock::CpuClock;
@@ -34,9 +37,15 @@ use esp_hal::spi::master::Spi;
 use esp_hal::time::Rate;
 
 use esp_hal::gpio::{Input, InputConfig, Level, Output, OutputConfig, Pull};
+// use reqwless::{
+//     client::HttpClient,
+//     request::{Method, RequestBuilder},
+// };
+
 
 // embedded graphics
 use crate::display::setup_display;
+use crate::weatherapi::WeatherAPIClient;
 
 #[panic_handler]
 fn panic(panic_info: &core::panic::PanicInfo) -> ! {
@@ -48,12 +57,21 @@ extern crate alloc;
 
 const SSID: &str = env!("SSID");
 const PASSWORD: &str = env!("PASSWORD");
+const API_KEY: &str = env!("API_KEY");
 
 
 // This creates a default app-descriptor required by the esp-idf bootloader.
 // For more information see: <https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/system/app_image_format.html#application-description>
 esp_bootloader_esp_idf::esp_app_desc!();
 
+macro_rules! mk_static {
+    ($t:ty,$val:expr) => {{
+        static STATIC_CELL: static_cell::StaticCell<$t> = static_cell::StaticCell::new();
+        #[deny(unused_attributes)]
+        let x = STATIC_CELL.uninit().write(($val));
+        x
+    }};
+}
 
 #[allow(
     clippy::large_stack_frames,
@@ -82,7 +100,7 @@ async fn main(spawner: Spawner) -> ! {
     let _ = peripherals.GPIO29;
     let _ = peripherals.GPIO30;
 
-    esp_alloc::heap_allocator!(#[esp_hal::ram(reclaimed)] size: 65536);
+    esp_alloc::heap_allocator!(size: 131072);
 
     let timg0 = TimerGroup::new(peripherals.TIMG0);
     let sw_interrupt =
@@ -143,9 +161,26 @@ async fn main(spawner: Spawner) -> ! {
         rprintln!("connected to wifi, got IP: {}", config.address);
     }
 
+    let mut weather_client = weatherapi::new_client(stack, API_KEY);
+
     loop {
-        rprintln!("Hello world!");
-        Timer::after(Duration::from_secs(1)).await;
+
+        let mut ok = false;
+
+        while !ok {
+            match weather_client.get_forecast().await {
+                Ok(forecast) => {
+                    ok = true;
+                    rprintln!("today's temp is {}", forecast.current.temp_c);
+                }
+                Err(err) => {
+                    rprintln!("failed to get weather data: {:?}", err);
+                    Timer::after(Duration::from_secs(10)).await;
+                }
+            }
+        }
+
+        Timer::after(Duration::from_secs(3600)).await;
     }
 
     // for inspiration have a look at the examples at https://github.com/esp-rs/esp-hal/tree/esp-hal-v1.1.0/examples
