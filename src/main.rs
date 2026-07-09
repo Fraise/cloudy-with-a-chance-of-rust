@@ -12,6 +12,7 @@ mod display;
 mod icons;
 mod weatherapi;
 
+use alloc::string::{String, ToString};
 use embassy_net::{Stack, Runner};
 use embassy_executor::Spawner;
 use embassy_time::{Duration, Timer};
@@ -92,7 +93,7 @@ async fn main(spawner: Spawner) -> ! {
     let _ = peripherals.GPIO29;
     let _ = peripherals.GPIO30;
 
-    esp_alloc::heap_allocator!(size: 131072);
+    esp_alloc::heap_allocator!(size: 160*1024);
 
     let timg0 = TimerGroup::new(peripherals.TIMG0);
     let sw_interrupt =
@@ -144,9 +145,6 @@ async fn main(spawner: Spawner) -> ! {
 
     // Initialize Display
     let mut display = setup_display(spi_bus, cs, busy_in, dc, reset);
-    display.draw_text("hello potato", 0, 55);
-    display.draw_icon("nights_stay.bmp", 0, 0);
-    display.flush().unwrap();
 
     stack.wait_config_up().await;
     if let Some(config) = stack.config_v4() {
@@ -156,7 +154,6 @@ async fn main(spawner: Spawner) -> ! {
     let mut weather_client = weatherapi::new_client(stack, API_KEY);
 
     loop {
-
         let mut ok = false;
 
         while !ok {
@@ -164,6 +161,12 @@ async fn main(spawner: Spawner) -> ! {
                 Ok(forecast) => {
                     ok = true;
                     rprintln!("today's temp is {}", forecast.current.temp_c);
+
+                    let mut temp_str = "temperature: ".to_string();
+                    temp_str.push_str(&forecast.current.temp_c.to_string());
+
+                    display.draw_text(temp_str.as_str(), 0, 12);
+                    display.flush().unwrap();
                 }
                 Err(err) => {
                     rprintln!("failed to get weather data: {:?}", err);

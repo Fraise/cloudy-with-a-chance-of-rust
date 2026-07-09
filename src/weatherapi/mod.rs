@@ -7,6 +7,7 @@ use embassy_net::tcp::client::{TcpClient, TcpClientState};
 use reqwless::client::{HttpClient, TlsConfig};
 use reqwless::request::{Method};
 use reqwless::response::StatusCode;
+use rtt_target::rprintln;
 use serde::Deserialize;
 
 macro_rules! mk_static {
@@ -36,8 +37,8 @@ pub fn new_client(stack: Stack<'static>, api_key: &'static str) -> WeatherAPICli
     );
     let dns_client = mk_static!(DnsSocket<'static>, DnsSocket::new(stack));
 
-    let rx_buf = mk_static!([u8; 4*4096], [0; 4*4096]);
-    let tx_buf = mk_static!([u8; 4*4096], [0; 4*4096]);
+    let rx_buf = mk_static!([u8; 24*1024], [0; 24*1024]);
+    let tx_buf = mk_static!([u8; 24*1024], [0; 24*1024]);
     let rng = esp_hal::rng::Rng::new();
     let tls_seed = rng.random() as u64 | ((rng.random() as u64) << 32);
 
@@ -59,7 +60,7 @@ pub fn new_client(stack: Stack<'static>, api_key: &'static str) -> WeatherAPICli
 
 impl<'a> WeatherAPIClient<'a> {
     pub async fn get_forecast(&mut self) -> Result<WeatherData, WeatherError> {
-        let mut rx_buf = [0u8; 65536];
+        let mut rx_buf = [0u8; 64*1024];
 
         let mut url = "https://api.weatherapi.com/v1/forecast.json?q=Montreal&days=1&aqi=no&alerts=no&key=".to_string();
         url.push_str(self.api_key);
