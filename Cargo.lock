@@ -193,17 +193,13 @@ dependencies = [
 name = "cloudy-with-a-chance-of-rust"
 version = "0.1.0"
 dependencies = [
- "critical-section",
  "der 0.8.0",
  "embassy-executor",
  "embassy-net",
  "embassy-time",
  "embedded-graphics",
- "embedded-graphics-transform",
  "embedded-hal 1.0.0",
  "embedded-hal-bus",
- "embedded-io 0.7.1",
- "embedded-io-async 0.7.0",
  "epd-waveshare",
  "esp-alloc",
  "esp-bootloader-esp-idf",
@@ -214,7 +210,6 @@ dependencies = [
  "rtt-target",
  "serde",
  "serde_json",
- "smoltcp",
  "static_cell",
  "tinybmp",
 ]
@@ -778,19 +773,9 @@ checksum = "4e8da660bb0c829b34a56a965490597f82a55e767b91f9543be80ce8ccb416fe"
 dependencies = [
  "az",
  "byteorder",
- "embedded-graphics-core 0.4.1",
+ "embedded-graphics-core",
  "float-cmp",
  "micromath",
-]
-
-[[package]]
-name = "embedded-graphics-core"
-version = "0.3.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b8b1239db5f3eeb7e33e35bd10bd014e7b2537b17e071f726a09351431337cfa"
-dependencies = [
- "az",
- "byteorder",
 ]
 
 [[package]]
@@ -801,15 +786,6 @@ checksum = "95743bef3ff70fcba3930246c4e6872882bbea0dcc6da2ca860112e0cd4bd09f"
 dependencies = [
  "az",
  "byteorder",
-]
-
-[[package]]
-name = "embedded-graphics-transform"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7bd45f20ef58186a640e1777177c37e4ef33dbb6ce3c4d9f909d81b498a643c2"
-dependencies = [
- "embedded-graphics-core 0.3.3",
 ]
 
 [[package]]
@@ -967,7 +943,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5080903b18a41a89d1dfe07cd5d7f800165ed4dcdf0513b770f83c1e4750150c"
 dependencies = [
  "bit_field",
- "embedded-graphics-core 0.4.1",
+ "embedded-graphics-core",
  "embedded-hal 1.0.0",
 ]
 

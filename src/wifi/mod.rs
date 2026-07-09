@@ -1,6 +1,5 @@
-use esp_hal::peripherals::{Peripherals, WIFI};
-use esp_radio::wifi::{Config, ControllerConfig, Interfaces, WifiController};
-use esp_radio::wifi::sta::StationConfig;
+use esp_hal::peripherals::{WIFI};
+use esp_radio::wifi::{Config, ControllerConfig, WifiController};
 use embassy_net::{DhcpConfig, StackResources, Stack, Runner};
 
 macro_rules! mk_static {

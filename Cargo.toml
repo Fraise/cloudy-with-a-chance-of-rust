@@ -23,8 +23,6 @@ esp-bootloader-esp-idf = { version = "0.5.0", features = ["esp32c6"] }
 
 embassy-net = { version = "0.9.1", features = ["dhcpv4", "medium-ethernet", "tcp", "udp", "dns"] }
 
-embedded-io = "0.7.1"
-embedded-io-async = "0.7.0"
 esp-alloc = "0.10.0"
 rtt-target = "0.6.2"
 # for more networking protocol support see https://crates.io/crates/edge-net
@@ -36,27 +34,13 @@ esp-radio = { version = "0.18.0", features = [
   "unstable",
   "wifi",
 ] }
-smoltcp = { version = "0.13.0", default-features = false, features = [
-  "medium-ethernet",
-  "multicast",
-  "proto-dhcpv4",
-  "proto-dns",
-  "proto-ipv4",
-  "socket-dns",
-  "socket-icmp",
-  "socket-raw",
-  "socket-tcp",
-  "socket-udp",
-] }
 
-critical-section = "1.2.0"
 static_cell      = "2.1.1"
 
 epd-waveshare = "0.6.0"
 embedded-hal = "1.0.0"
 embedded-hal-bus = "0.3.0"
 embedded-graphics = "0.8.2"
-embedded-graphics-transform = "0.1.0"
 
 tinybmp = "0.7.0"
 serde = { version = "1.0.228", default-features = false, features = ["derive", "alloc"] }

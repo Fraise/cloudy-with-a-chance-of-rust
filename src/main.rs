@@ -12,9 +12,7 @@ mod display;
 mod icons;
 mod weatherapi;
 
-use alloc::string::String;
-// use embassy_net::{Stack, Runner, dns::DnsSocket, tcp::client::{TcpClient, TcpClientState}};
-use embassy_net::{Stack, Runner, tcp::client::{TcpClient, TcpClientState}};
+use embassy_net::{Stack, Runner};
 use embassy_executor::Spawner;
 use embassy_time::{Duration, Timer};
 use esp_hal::clock::CpuClock;
@@ -37,15 +35,9 @@ use esp_hal::spi::master::Spi;
 use esp_hal::time::Rate;
 
 use esp_hal::gpio::{Input, InputConfig, Level, Output, OutputConfig, Pull};
-// use reqwless::{
-//     client::HttpClient,
-//     request::{Method, RequestBuilder},
-// };
-
 
 // embedded graphics
 use crate::display::setup_display;
-use crate::weatherapi::WeatherAPIClient;
 
 #[panic_handler]
 fn panic(panic_info: &core::panic::PanicInfo) -> ! {
