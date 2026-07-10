@@ -1,3 +1,7 @@
+pub mod condition_icons;
+
+pub use condition_icons::{icon_for, icon_for_with_day};
+
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use core::fmt;
