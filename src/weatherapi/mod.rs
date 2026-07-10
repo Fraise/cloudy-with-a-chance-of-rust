@@ -1,12 +1,12 @@
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use core::fmt;
-use embassy_net::dns::DnsSocket;
 use embassy_net::Stack;
+use embassy_net::dns::DnsSocket;
 use embassy_net::tcp::client::{TcpClient, TcpClientState};
 use reqwless::client::{HttpClient, TlsConfig};
-use reqwless::request::{Method};
-use reqwless::response::StatusCode;
+use reqwless::request::Method;
+use reqwless::response::{Status, StatusCode};
 use rtt_target::rprintln;
 use serde::Deserialize;
 
@@ -20,7 +20,7 @@ macro_rules! mk_static {
 }
 
 pub struct WeatherAPIClient<'a> {
-    http_client: HttpClient<'a, TcpClient<'a, 1,1500,1500>, DnsSocket<'a>>,
+    http_client: HttpClient<'a, TcpClient<'a, 1, 1500, 1500>, DnsSocket<'a>>,
     api_key: &'a str,
 }
 
@@ -37,22 +37,16 @@ pub fn new_client(stack: Stack<'static>, api_key: &'static str) -> WeatherAPICli
     );
     let dns_client = mk_static!(DnsSocket<'static>, DnsSocket::new(stack));
 
-    let rx_buf = mk_static!([u8; 24*1024], [0; 24*1024]);
-    let tx_buf = mk_static!([u8; 24*1024], [0; 24*1024]);
+    let rx_buf = mk_static!([u8; 24 * 1024], [0; 24 * 1024]);
+    let tx_buf = mk_static!([u8; 24 * 1024], [0; 24 * 1024]);
     let rng = esp_hal::rng::Rng::new();
     let tls_seed = rng.random() as u64 | ((rng.random() as u64) << 32);
 
-    let tls_config = TlsConfig::new(
-        tls_seed,
-        rx_buf,
-        tx_buf,
-        reqwless::client::TlsVerify::None,
-    );
-
+    let tls_config = TlsConfig::new(tls_seed, rx_buf, tx_buf, reqwless::client::TlsVerify::None);
 
     let http_client = HttpClient::new_with_tls(tcp_client, dns_client, tls_config);
 
-    WeatherAPIClient{
+    WeatherAPIClient {
         http_client,
         api_key,
     }
@@ -60,14 +54,14 @@ pub fn new_client(stack: Stack<'static>, api_key: &'static str) -> WeatherAPICli
 
 impl<'a> WeatherAPIClient<'a> {
     pub async fn get_forecast(&mut self) -> Result<WeatherData, WeatherError> {
-        let mut rx_buf = [0u8; 64*1024];
+        let mut rx_buf = [0u8; 64 * 1024];
 
-        let mut url = "https://api.weatherapi.com/v1/forecast.json?q=Montreal&days=1&aqi=no&alerts=no&key=".to_string();
+        let mut url =
+            "https://api.weatherapi.com/v1/forecast.json?q=Montreal&days=1&aqi=no&alerts=no&key="
+                .to_string();
         url.push_str(self.api_key);
 
-        let mut builder = self.http_client
-            .request(Method::GET, url.as_str())
-            .await?;
+        let mut builder = self.http_client.request(Method::GET, url.as_str()).await?;
 
         let response = builder.send(&mut rx_buf).await?;
 
@@ -168,7 +162,6 @@ pub struct DayForecast {
     // pub hour: Vec<HourForecast>,
 }
 
-
 #[derive(Deserialize)]
 pub struct Forecast {
     pub forecastday: Vec<DayForecast>,
@@ -242,22 +235,30 @@ pub struct WeatherData {
 
 #[derive(Debug)]
 pub enum WeatherError {
-    Http(reqwless::Error),     // network/HTTP failure
+    Http(reqwless::Error), // network/HTTP failure
+    #[allow(dead_code)]
     HttpStatus(StatusCode),
     Json(serde_json::Error), // deserialization failure
-    BufferTooSmall,            // not enough room for the response
 }
 
 impl From<reqwless::Error> for WeatherError {
-    fn from(e: reqwless::Error) -> Self { WeatherError::Http(e) }
+    fn from(e: reqwless::Error) -> Self {
+        WeatherError::Http(e)
+    }
 }
 
 impl From<serde_json::Error> for WeatherError {
-    fn from(e: serde_json::Error) -> Self { WeatherError::Json(e) }
+    fn from(e: serde_json::Error) -> Self {
+        WeatherError::Json(e)
+    }
 }
 
 impl fmt::Display for WeatherError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self)
+        match self {
+            WeatherError::Http(e) => write!(f, "http error: {e:?}"),
+            WeatherError::HttpStatus(_) => write!(f, "http status: {:?}", self),
+            WeatherError::Json(e) => write!(f, "json error: {e}"),
+        }
     }
 }

@@ -7,25 +7,19 @@
 )]
 #![deny(clippy::large_stack_frames)]
 
-mod wifi;
 mod display;
 mod icons;
 mod weatherapi;
+mod wifi;
 
 use alloc::string::{String, ToString};
-use embassy_net::{Stack, Runner};
 use embassy_executor::Spawner;
+use embassy_net::{Runner, Stack};
 use embassy_time::{Duration, Timer};
 use esp_hal::clock::CpuClock;
 use esp_hal::timer::timg::TimerGroup;
+use esp_radio::wifi::{Config, Interface, WifiController, scan::ScanConfig, sta::StationConfig};
 use rtt_target::rprintln;
-use esp_radio::wifi::{
-    Config,
-    Interface,
-    WifiController,
-    scan::ScanConfig,
-    sta::StationConfig,
-};
 
 // epd
 use epd_waveshare::prelude::WaveshareDisplay;
@@ -51,7 +45,6 @@ extern crate alloc;
 const SSID: &str = env!("SSID");
 const PASSWORD: &str = env!("PASSWORD");
 const API_KEY: &str = env!("API_KEY");
-
 
 // This creates a default app-descriptor required by the esp-idf bootloader.
 // For more information see: <https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/system/app_image_format.html#application-description>
@@ -108,7 +101,8 @@ async fn main(spawner: Spawner) -> ! {
             .with_password(PASSWORD.into()),
     );
 
-    let (mut wifi_controller, stack, runner ) = wifi::setup_network(peripherals.WIFI, station_config);
+    let (mut wifi_controller, stack, runner) =
+        wifi::setup_network(peripherals.WIFI, station_config);
 
     rprintln!("scanning SSIDs");
     let scan_config = ScanConfig::default().with_max(10);
@@ -121,7 +115,6 @@ async fn main(spawner: Spawner) -> ! {
     spawner.spawn(connection(wifi_controller).unwrap());
     spawner.spawn(net_task(runner).unwrap());
 
-
     // Setup display dependencies
     let spi_bus = Spi::new(
         peripherals.SPI2,
@@ -129,11 +122,11 @@ async fn main(spawner: Spawner) -> ! {
             .with_frequency(Rate::from_mhz(4))
             .with_mode(spi::Mode::_0),
     )
-        .unwrap()
-        //CLK
-        .with_sck(peripherals.GPIO18)
-        //DIN
-        .with_mosi(peripherals.GPIO23);
+    .unwrap()
+    //CLK
+    .with_sck(peripherals.GPIO18)
+    //DIN
+    .with_mosi(peripherals.GPIO23);
 
     let cs = Output::new(peripherals.GPIO10, Level::Low, OutputConfig::default());
     let busy_in = Input::new(
@@ -162,10 +155,10 @@ async fn main(spawner: Spawner) -> ! {
                     ok = true;
                     rprintln!("today's temp is {}", forecast.current.temp_c);
 
-                    let mut temp_str = "temperature: ".to_string();
-                    temp_str.push_str(&forecast.current.temp_c.to_string());
+                    let dashboard = display::Dashboard::from_weather_data(&forecast);
 
-                    display.draw_text(temp_str.as_str(), 0, 12);
+                    display.clear();
+                    display.draw_dashboard(dashboard);
                     display.flush().unwrap();
                 }
                 Err(err) => {
@@ -177,51 +170,28 @@ async fn main(spawner: Spawner) -> ! {
 
         Timer::after(Duration::from_secs(3600)).await;
     }
-
-    // for inspiration have a look at the examples at https://github.com/esp-rs/esp-hal/tree/esp-hal-v1.1.0/examples
 }
-
-async fn wait_for_connection(stack: Stack<'_>) {
-    rprintln!("Waiting for link to be up");
-    loop {
-        if stack.is_link_up() {
-            break;
-        }
-        Timer::after(Duration::from_millis(500)).await;
-    }
-
-    rprintln!("Waiting to get IP address...");
-    loop {
-        if let Some(config) = stack.config_v4() {
-            rprintln!("Got IP: {}", config.address);
-            break;
-        }
-        Timer::after(Duration::from_millis(500)).await;
-    }
-}
-
 
 #[embassy_executor::task]
 async fn connection(mut controller: WifiController<'static>) {
     rprintln!("start connection task");
 
     loop {
-        rprintln!("About to connect...");
+        rprintln!("trying to connect...");
 
         match controller.connect_async().await {
             Ok(info) => {
-                rprintln!("Wifi connected to {:?}", info);
+                rprintln!("connected to {:?}", info);
 
-                // wait until we're no longer connected
                 let info = controller.wait_for_disconnect_async().await.ok();
-                rprintln!("Disconnected: {:?}", info);
+                rprintln!("disconnected from {:?}", info);
             }
             Err(e) => {
-                rprintln!("Failed to connect to wifi: {e:?}");
+                rprintln!("failed to connect to wifi: {:?}", e);
             }
         }
 
-        Timer::after(Duration::from_millis(5000)).await
+        Timer::after(Duration::from_secs(10)).await
     }
 }
 
