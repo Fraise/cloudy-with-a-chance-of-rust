@@ -163,7 +163,7 @@ pub struct DayForecast {
     pub date_epoch: i64,
     pub day: Day,
     pub astro: Astro,
-    // pub hour: Vec<HourForecast>,
+    pub hour: Vec<HourForecast>,
 }
 
 #[derive(Deserialize)]

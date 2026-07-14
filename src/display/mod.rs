@@ -3,8 +3,7 @@ use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use embassy_time::Delay;
-use embedded_graphics::image::Image;
-use embedded_graphics::mono_font::ascii::{FONT_9X15, FONT_10X20};
+use embedded_graphics::mono_font::ascii::{FONT_9X15, FONT_8X13};
 use embedded_graphics::mono_font::{MonoFont, MonoTextStyleBuilder};
 use embedded_graphics::pixelcolor::Rgb555;
 use embedded_graphics::prelude::*;
@@ -16,10 +15,8 @@ use epd_waveshare::color::Color;
 use epd_waveshare::epd2in13_v2::{Display2in13, Epd2in13};
 use epd_waveshare::graphics::DisplayRotation;
 use epd_waveshare::prelude::WaveshareDisplay;
-use esp_hal::gpio::{Input, InputConfig, Level, Output, OutputConfig, Pull};
-use esp_hal::peripherals::Peripherals;
+use esp_hal::gpio::{Input, Output};
 use esp_hal::spi::master::Spi;
-use esp_hal::time::Rate;
 use esp_hal::{Blocking, spi};
 use tinybmp::Bmp;
 
@@ -135,25 +132,89 @@ where
 
     pub fn draw_dashboard(&mut self, dashboard: Dashboard) {
         self.draw_text(
-            format!("@ {}", dashboard.last_update).as_str(),
+            format!("{}", dashboard.day_forecast).as_str(),
             FONT_9X15,
             0,
-            12,
+            10,
         );
         self.draw_text(
-            format!("t. min: {}", dashboard.min_temp).as_str(),
+            format!("min: {}", dashboard.min_temp).as_str(),
             FONT_9X15,
             0,
             24,
         );
         self.draw_text(
-            format!("t. max: {}", dashboard.max_temp).as_str(),
+            format!("max: {}", dashboard.max_temp).as_str(),
             FONT_9X15,
             0,
             36,
         );
 
-        self.draw_icon(dashboard.icon_name.as_str(), 202, 0);
+        if dashboard.total_snow_cm > 0.0 {
+            self.draw_text(
+                format!("{}% snow", dashboard.chance_of_snow).as_str(),
+                FONT_9X15,
+                120,
+                24,
+            );
+            self.draw_text(
+                format!("{}cm", dashboard.total_snow_cm).as_str(),
+                FONT_9X15,
+                120,
+                36,
+            );
+        } else {
+            self.draw_text(
+                format!("{}% rain", dashboard.chance_of_rain).as_str(),
+                FONT_9X15,
+                120,
+                24,
+            );
+            self.draw_text(
+                format!("{}mm", dashboard.total_rain_mm).as_str(),
+                FONT_9X15,
+                120,
+                36,
+            );
+        }
+
+        self.draw_icon(dashboard.icon_name.as_str(), 204, -2);
+
+        let mut offset = 4;
+        for h in dashboard.next_hours.iter() {
+            self.draw_text(
+                format!("{}", h.time).as_str(),
+                FONT_8X13,
+                offset,
+                54,
+            );
+
+            self.draw_text(
+                format!("{}C", h.temp).as_str(),
+                FONT_8X13,
+                offset,
+                64,
+            );
+
+            if h.snow_cm > 0.0 {
+                self.draw_text(
+                    format!("{}cm", h.snow_cm as i64).as_str(),
+                    FONT_8X13,
+                    offset,
+                    74,
+                );
+            } else {
+                self.draw_text(
+                    format!("{}mm", h.rain_mm as i64).as_str(),
+                    FONT_8X13,
+                    offset,
+                    74,
+                );
+            }
+
+            self.draw_icon(dashboard.icon_name.as_str(), offset-4, 76);
+            offset += 50;
+        }
     }
 }
 
@@ -190,6 +251,7 @@ pub fn setup_display<'a>(
 }
 
 pub struct Dashboard {
+    day_forecast: String,
     icon_name: String,
     last_update: String,
     min_temp: f64,
@@ -198,6 +260,15 @@ pub struct Dashboard {
     total_rain_mm: f64,
     chance_of_snow: i64,
     total_snow_cm: f64,
+    next_hours: Vec<Hour>,
+}
+
+pub struct Hour {
+    time: String,
+    temp: f64,
+    icon_name: String,
+    rain_mm: f64,
+    snow_cm: f64,
 }
 
 impl Dashboard {
@@ -215,7 +286,37 @@ impl Dashboard {
         .to_string();
         icon_name.push_str(".bmp");
 
+        let mut next_hours: Vec<Hour> = Vec::new();
+        let mut max_hours = 5;
+
+        for h in weather_data.forecast.forecastday.first().unwrap().hour.iter() {
+            if max_hours == 0 {
+                break;
+            }
+
+            if h.time_epoch >= weather_data.location.localtime_epoch {
+                let mut ic = icon_for(h.condition.code).to_string();
+                ic.push_str(".bmp");
+
+                next_hours.push(Hour{
+                    time: h.time.clone().split(" ").last().unwrap().to_string(),
+                    rain_mm: h.precip_mm,
+                    temp: h.temp_c,
+                    icon_name: ic,
+                    snow_cm: h.snow_cm,
+                });
+
+                max_hours -= 1;
+            }
+        }
+
         Dashboard {
+            day_forecast: weather_data
+                .forecast
+                .forecastday
+                .first()
+                .unwrap()
+                .day.condition.text.clone(),
             icon_name,
             max_temp: weather_data
                 .forecast
@@ -260,6 +361,7 @@ impl Dashboard {
                 .unwrap()
                 .day
                 .totalsnow_cm,
+            next_hours,
         }
     }
 }
