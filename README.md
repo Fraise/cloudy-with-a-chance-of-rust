@@ -134,15 +134,15 @@ espflash flash --chip esp32c6 target/riscv32imac-unknown-none-elf/release/cloudy
 
 ```
 src/
-  main.rs            - entry point, Wi-Fi bring-up, task spawning
-  lib.rs             - shared modules
-  display/           - embedded-graphics framebuffer + e-paper driver
-  weatherapi/        - WeatherAPI.com client (reqwless + serde)
+  main.rs              - entry point, Wi-Fi bring-up, task spawning
+  lib.rs               - shared modules
+  display/             - embedded-graphics framebuffer + e-paper driver
+  weatherapi/          - WeatherAPI.com client (reqwless + serde)
     condition_icons.rs - maps WeatherAPI condition codes to icon BMPs
-  wifi/              - embassy-net Wi-Fi configuration helpers
-  icons/             - generated icon index module
-icons/               - 20 weather condition BMPs (250x122, B/W)
-build.rs             - esp-idf app descriptor + metadata
+  wifi/                - embassy-net Wi-Fi configuration helpers
+  icons/               - generated icon index module
+icons/                 - 20 weather condition BMPs (48x48, B/W)
+build.rs               - esp-idf app descriptor + metadata
 ```
 
 ## References
@@ -150,7 +150,7 @@ build.rs             - esp-idf app descriptor + metadata
 - [Waveshare ESP32-C6 dev kit doc](https://docs.waveshare.com/ESP32-C6-DEV-KIT-N8)
 - [Waveshare e-Paper doc](https://www.waveshare.com/wiki/2.13inch_e-Paper_HAT_(B)_Manual)
 - [Wifi connection example](https://github.com/esp-rs/esp-hal/blob/esp-hal-v1.1.0/examples/wifi/embassy_dhcp/src/main.rs)
-- [probe-rs](https://probe.rs/) — runner used to flash and debug
+- [probe-rs](https://probe.rs/)
 
 ## Weather API
 
