@@ -1,7 +1,5 @@
 pub mod condition_icons;
 
-pub use condition_icons::{icon_for, icon_for_with_day};
-
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use core::fmt;
@@ -10,8 +8,7 @@ use embassy_net::dns::DnsSocket;
 use embassy_net::tcp::client::{TcpClient, TcpClientState};
 use reqwless::client::{HttpClient, TlsConfig};
 use reqwless::request::Method;
-use reqwless::response::{Status, StatusCode};
-use rtt_target::rprintln;
+use reqwless::response::StatusCode;
 use serde::Deserialize;
 
 macro_rules! mk_static {
@@ -79,6 +76,7 @@ impl<'a> WeatherAPIClient<'a> {
     }
 }
 
+#[allow(dead_code)]
 #[derive(Deserialize)]
 pub struct HourForecast {
     pub time_epoch: i64,
@@ -121,6 +119,7 @@ pub struct HourForecast {
     // pub gti: _,
 }
 
+#[allow(dead_code)]
 #[derive(Deserialize)]
 pub struct Astro {
     pub sunrise: String,
@@ -133,6 +132,7 @@ pub struct Astro {
     pub is_sun_up: i64,
 }
 
+#[allow(dead_code)]
 #[derive(Deserialize)]
 pub struct Day {
     pub maxtemp_c: f64,
@@ -157,6 +157,7 @@ pub struct Day {
     pub uv: f64,
 }
 
+#[allow(dead_code)]
 #[derive(Deserialize)]
 pub struct DayForecast {
     pub date: String,
@@ -171,6 +172,7 @@ pub struct Forecast {
     pub forecastday: Vec<DayForecast>,
 }
 
+#[allow(dead_code)]
 #[derive(Deserialize)]
 pub struct Condition {
     pub text: String,
@@ -178,6 +180,7 @@ pub struct Condition {
     pub code: i64,
 }
 
+#[allow(dead_code)]
 #[derive(Deserialize)]
 pub struct Current {
     pub last_updated_epoch: i64,
@@ -218,6 +221,7 @@ pub struct Current {
     pub dni: f64,
     pub gti: f64,
 }
+#[allow(dead_code)]
 #[derive(Deserialize)]
 pub struct Location {
     pub name: String,

@@ -12,17 +12,13 @@ mod icons;
 mod weatherapi;
 mod wifi;
 
-use alloc::string::{String, ToString};
 use embassy_executor::Spawner;
-use embassy_net::{Runner, Stack};
+use embassy_net::{Runner};
 use embassy_time::{Duration, Timer};
 use esp_hal::clock::CpuClock;
 use esp_hal::timer::timg::TimerGroup;
 use esp_radio::wifi::{Config, Interface, WifiController, scan::ScanConfig, sta::StationConfig};
 use rtt_target::rprintln;
-
-// epd
-use epd_waveshare::prelude::WaveshareDisplay;
 
 // SPI
 use esp_hal::spi;
@@ -49,15 +45,6 @@ const API_KEY: &str = env!("API_KEY");
 // This creates a default app-descriptor required by the esp-idf bootloader.
 // For more information see: <https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/system/app_image_format.html#application-description>
 esp_bootloader_esp_idf::esp_app_desc!();
-
-macro_rules! mk_static {
-    ($t:ty,$val:expr) => {{
-        static STATIC_CELL: static_cell::StaticCell<$t> = static_cell::StaticCell::new();
-        #[deny(unused_attributes)]
-        let x = STATIC_CELL.uninit().write(($val));
-        x
-    }};
-}
 
 #[allow(
     clippy::large_stack_frames,
@@ -157,9 +144,11 @@ async fn main(spawner: Spawner) -> ! {
 
                     let dashboard = display::Dashboard::from_weather_data(&forecast);
 
+                    display.wake().unwrap();
                     display.clear();
                     display.draw_dashboard(dashboard);
                     display.flush().unwrap();
+                    display.sleep().unwrap();
                 }
                 Err(err) => {
                     rprintln!("failed to get weather data: {:?}", err);

@@ -1,4 +1,4 @@
-use crate::weatherapi::{WeatherData, icon_for};
+use crate::weatherapi::{WeatherData};
 use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
@@ -17,8 +17,9 @@ use epd_waveshare::graphics::DisplayRotation;
 use epd_waveshare::prelude::WaveshareDisplay;
 use esp_hal::gpio::{Input, Output};
 use esp_hal::spi::master::Spi;
-use esp_hal::{Blocking, spi};
+use esp_hal::{Blocking};
 use tinybmp::Bmp;
+use crate::weatherapi::condition_icons::icon_for_with_day;
 
 /// Concrete alias for the SPI error type our `ExclusiveDevice` produces.
 /// Lets the public method signatures stay short.
@@ -55,12 +56,6 @@ where
             epd,
             framebuffer,
         }
-    }
-
-    /// Mutable access to the embedded-graphics `DrawTarget` so callers can use
-    /// any `Drawable` (text, primitives, images, etc.) to compose a frame.
-    pub fn framebuffer(&mut self) -> &mut Display2in13 {
-        &mut self.framebuffer
     }
 
     /// Push the current framebuffer contents to the panel and trigger a
@@ -212,7 +207,7 @@ where
                 );
             }
 
-            self.draw_icon(dashboard.icon_name.as_str(), offset-4, 76);
+            self.draw_icon(h.icon_name.as_str(), offset-4, 76);
             offset += 50;
         }
     }
@@ -253,7 +248,6 @@ pub fn setup_display<'a>(
 pub struct Dashboard {
     day_forecast: String,
     icon_name: String,
-    last_update: String,
     min_temp: f64,
     max_temp: f64,
     chance_of_rain: i64,
@@ -273,7 +267,7 @@ pub struct Hour {
 
 impl Dashboard {
     pub fn from_weather_data(weather_data: &WeatherData) -> Self {
-        let mut icon_name = icon_for(
+        let mut icon_name = icon_for_with_day(
             weather_data
                 .forecast
                 .forecastday
@@ -282,6 +276,7 @@ impl Dashboard {
                 .day
                 .condition
                 .code,
+            weather_data.current.is_day
         )
         .to_string();
         icon_name.push_str(".bmp");
@@ -295,7 +290,7 @@ impl Dashboard {
             }
 
             if h.time_epoch >= weather_data.location.localtime_epoch {
-                let mut ic = icon_for(h.condition.code).to_string();
+                let mut ic = icon_for_with_day(h.condition.code, h.is_day).to_string();
                 ic.push_str(".bmp");
 
                 next_hours.push(Hour{
@@ -332,7 +327,6 @@ impl Dashboard {
                 .unwrap()
                 .day
                 .mintemp_c,
-            last_update: weather_data.current.last_updated.clone(),
             chance_of_rain: weather_data
                 .forecast
                 .forecastday
